@@ -45,7 +45,7 @@ let print_comments ppf = function
 ;;
 
 let print_commented print_desc ppf = function
-  | { desc = desc; comments : comments; } ->
+  | { desc = desc; comments = comments; } ->
     Format.fprintf ppf "@[<v 0>%a%a@]"
       print_comments comments
       print_desc desc
