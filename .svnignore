@@ -1,0 +1,15 @@
+## After changing, run
+##   svn propset svn:ignore -F .svnignore -R .
+*.cm*
+*.o
+*.byt
+*.bin
+*.annot
+*.output
+*.obj
+a.out
+TAGS
+fiscac
+fisca_parser.ml
+fisca_parser.mli
+fisca_lexer.ml

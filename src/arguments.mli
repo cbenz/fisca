@@ -14,3 +14,9 @@
 
 val parse_args : unit -> unit
 ;;
+
+(*
+ Local Variables:
+  compile-command: "cd .. && make"
+  End:
+*)

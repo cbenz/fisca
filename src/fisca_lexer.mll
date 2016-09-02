@@ -58,6 +58,9 @@ let token_of_ident s =
 type error =
    | Illegal_character of char
    | Illegal_escape of string
+   | Illegal_end_of_comment_in_program of string
+   | Illegal_end_of_comment_in_string of string
+   | Unterminated_comment
    | Unterminated_string
 (** The various errors when lexing. *)
 ;;
@@ -71,13 +74,46 @@ let report_error ppf = function
       Format.fprintf ppf "Illegal character (%C)" c
   | Illegal_escape s ->
       Format.fprintf ppf "Illegal escape (%S)" s
+  | Illegal_end_of_comment_in_program s ->
+      Format.fprintf ppf "Illegal end of comment in program (%S)" s
+  | Illegal_end_of_comment_in_string s ->
+      Format.fprintf ppf "Illegal end of comment in string (%S)" s
+  | Unterminated_comment ->
+      Format.fprintf ppf "Unterminated comment"
   | Unterminated_string ->
       Format.fprintf ppf "Unterminated string"
 ;;
 
 let token_of_string s = STRING s;;
 
+open Fisca_types;;
+
+let make_comment comment_kind desc =
+  {
+    comment_kind = comment_kind;
+    comment_desc = desc;
+  }
+;;
+
+let token_of_comment comment_kind s =
+  let comment = make_comment comment_kind (Comment_program s) in
+  match comment_kind with
+  | Comment_simple -> COMMENT comment
+  | Comment_newlines -> COMMENT_NEWLINES comment
+;;
+let token_of_comment_star comment_kind s =
+  let comment = make_comment comment_kind (Comment_doc s) in
+  match comment_kind with
+  | Comment_simple -> COMMENT_STAR comment
+  | Comment_newlines -> COMMENT_STAR_NEWLINES comment
+;;
+
 (** {6 Keeping the internal buffer locations up to date} *)
+let get_source_name () =
+  if Configuration.is_source_file_name ()
+  then Configuration.get_source_file_name ()
+  else "manual input"
+;;
 
 let update_loc lexbuf fname line absolute chars =
   let pos = lexbuf.lex_curr_p in
@@ -89,9 +125,30 @@ let update_loc lexbuf fname line absolute chars =
   }
 ;;
 
+let update_lexbuf_loc lexbuf = update_loc lexbuf (get_source_name ());;
+
 (** Add one to the current line counter of the file being lexed. *)
 let incr_line_num lexbuf =
-  update_loc lexbuf "manual input" (*(Configuration.get_source_file ())*) 1 false 0
+  update_lexbuf_loc lexbuf 1 false 0
+;;
+
+(** {6 Utilities for lexer buffers *)
+let store_char buffer c =
+  Buffer.add_char buffer c
+;;
+
+let store_string buffer s =
+  Buffer.add_string buffer s
+;;
+
+let store_lexeme buffer lexbuf =
+  store_string buffer (Lexing.lexeme lexbuf)
+;;
+
+let get_stored_string buffer =
+  let s = Buffer.contents buffer in
+  Buffer.reset buffer;
+  s
 ;;
 
 (** {6 Lexing the string tokens} *)
@@ -99,16 +156,25 @@ let string_buffer = Buffer.create 256;;
 
 let string_start_pos = ref None;;
 
-let store_string_char c =
-  Buffer.add_char string_buffer c
+let store_string_char = store_char string_buffer;;
+
+let get_string_buffer () =
+  get_stored_string string_buffer
 ;;
 
-let get_stored_string () =
-  let s = Buffer.contents string_buffer in
-  Buffer.reset string_buffer;
-  s
-;;
+(** {6 Lexing the comment tokens} *)
+let comment_buffer = Buffer.create 256;;
 
+let comment_start_pos = ref None;;
+
+let store_comment_char = store_char comment_buffer;;
+
+let store_string_in_comment = store_string comment_buffer;;
+let store_lexeme_in_comment = store_lexeme comment_buffer;;
+
+let get_stored_comment () = get_stored_string comment_buffer;;
+
+(** {6 escaping characters *)
 let char_for_character = function
   | '\\' -> '\\'
   | '\"' -> '\"'
@@ -116,6 +182,7 @@ let char_for_character = function
   | 't' -> '\t'
   | 'b' -> '\b'
   | 'r' -> '\r'
+  | '*' -> '*'
   | c ->
     Configuration.fatal_error
       (Printf.sprintf "Unknown escaped character %C" c)
@@ -167,7 +234,7 @@ let ident =
   | uppercase_alphabetic inside_ident*
 
 let escaped_character =
-    '\\' [ '\\' '\"' 'n' 't' 'b' 'r' ]
+    '\\' [ '\\' '\"' 'n' 't' 'b' 'r' '*']
     (* ` Helping emacs }]) *)
 
 (** {3 The main lexer. *)
@@ -194,8 +261,40 @@ rule token = parse
       begin match !string_start_pos with
       | Some (start_pos, _) -> lexbuf.lex_start_p <- start_pos
       | _ -> assert false end;
-      let s = get_stored_string () in
+      let s = get_string_buffer () in
       token_of_string s
+    }
+
+  (* Comments *)
+  | "(*"
+    {
+      comment_start_pos :=
+        Some (lexbuf.lex_start_p, lexbuf.lex_curr_p);
+      let comment_kind = comment lexbuf in
+      begin match !comment_start_pos with
+      | Some (start_pos, _) -> lexbuf.lex_start_p <- start_pos
+      | _ -> assert false end;
+      let s = get_stored_comment () in
+      token_of_comment comment_kind s
+    }
+  | "(**"
+    {
+      comment_start_pos :=
+        Some (lexbuf.lex_start_p, lexbuf.lex_curr_p);
+      let comment_kind = comment lexbuf in
+      begin match !comment_start_pos with
+      | Some (start_pos, _) -> lexbuf.lex_start_p <- start_pos
+      | _ -> assert false end;
+      let s = get_stored_comment () in
+      token_of_comment_star comment_kind s
+    }
+  | "*)"
+    {
+      raise
+        (Error
+           (Illegal_end_of_comment_in_program (Lexing.lexeme lexbuf),
+            lexbuf.lex_start_p,
+            lexbuf.lex_curr_p))
     }
 
   (* Identifiers *)
@@ -249,6 +348,12 @@ and string = parse
   | escaped_character
     { store_string_char (char_for_character (Lexing.lexeme_char lexbuf 1));
       string lexbuf }
+  | "*)"
+    { raise
+        (Error
+           (Illegal_end_of_comment_in_string (Lexing.lexeme lexbuf),
+            lexbuf.lex_start_p,
+            lexbuf.lex_curr_p)) }
 
   | '\\' _
     { raise
@@ -265,8 +370,54 @@ and string = parse
     { store_string_char (Lexing.lexeme_char lexbuf 0);
       string lexbuf }
 
+and comment = parse
+  | '\"'
+    {
+      string_start_pos :=
+        Some (lexbuf.lex_start_p, lexbuf.lex_curr_p);
+      string lexbuf;
+      begin match !string_start_pos with
+      | Some (start_pos, _) -> lexbuf.lex_start_p <- start_pos
+      | _ -> assert false end;
+      let _s = get_string_buffer () in
+      comment lexbuf
+    }
+
+  | "*)" (newline+ as newlines)
+    { let len = String.length newlines in
+      update_lexbuf_loc lexbuf len false 0;
+      store_lexeme_in_comment lexbuf;
+      Comment_newlines
+    }
+  | "*)"
+    { store_lexeme_in_comment lexbuf;
+      Comment_simple }
+  | escaped_character
+    { store_comment_char (char_for_character (Lexing.lexeme_char lexbuf 1));
+      comment lexbuf }
+
+  | '\\' _
+    { raise
+        (Error
+           (Illegal_escape (Lexing.lexeme lexbuf),
+            lexbuf.lex_start_p,
+            lexbuf.lex_curr_p)) }
+  | eof
+    { match !comment_start_pos with
+      | Some (start_pos, end_pos) ->
+        raise (Error (Unterminated_comment, start_pos, end_pos))
+      | _ -> assert false }
+  | newline
+    { update_lexbuf_loc lexbuf 1 false 0;
+      store_lexeme_in_comment lexbuf;
+      comment lexbuf
+    }
+  | _
+    { store_comment_char (Lexing.lexeme_char lexbuf 0);
+      comment lexbuf }
+
 (*
  Local Variables:
-  compile-command: "make"
+  compile-command: "cd .. && make"
   End:
 *)

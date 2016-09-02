@@ -12,66 +12,43 @@
 #                                                                     #
 #######################################################################
 
-RM=rm -f
-MV=mv -f
-CD=\cd
-TAR_XZF=tar -xzf
-TAR_CZF=tar -czf
-
-CAMLC_BYT=ocamlc -w A -warn-error A -annot
-CAMLC_BIN=ocamlopt -w A
-CAMLC_LEX=ocamllex
-CAMLC_YAC=ocamlyacc -v
-
-SRC_FILES=\
- configuration.ml\
- arguments.ml\
- fisca_program_pprint.ml\
- fisca_parser.ml fisca_lexer.ml\
-main.ml\
-# fisca.ml\
-
-MLI_FILES=\
- fisca_types.mli\
- fisca_program_pprint.mli\
- configuration.mli\
- arguments.ml\
- fisca_parser.mli\
- #fisca.mli]
-
-CMI_OBJS=$(MLI_FILES:.mli=.cmi)
-BYT_OBJS=$(SRC_FILES:.ml=.cmo)
-
-OBJS=$(CMI_OBJS) $(BYT_OBJS)
-
-VERSION=1.0.0
+VERSION=1.2.1
 SOFTWARE_NAME=fisca
 SOFTWARE_FULL_NAME=$(SOFTWARE_NAME)-$(VERSION)
 
-EXE=fiscac
+SOFTWARE_RELEASE_NAME=$(SOFTWARE_FULL_NAME)
 
-.SUFFIXES: .ml .mli .mll .mly
-.SUFFIXES: .cmi .cmo
+# Include basic command definitions
+include config/Commands.mk
+
+EXE=fiscac
 
 .PHONY: all tarball depend
 .PHONY: clean clean-spurious
 .PHONY: clean-all before-clean-all
 .PHONY: etags
 
+# Include Caml compiler and tools definitions
+include config/Caml_commands.mk
+
+# Include source and compile file definitions
+include src/Objs.mk
+
 all: $(EXE)
 
-$(EXE): $(OBJS)
+$(EXE): $(ALL_BYT_OBJS)
 	@ echo "Linking executable file $(EXE)" && \
 	$(CAMLC_BYT) -o $(EXE) $(BYT_OBJS)
 
 clean-spurious:
-	@$(RM) *~ .*~ "\#*" ".\#*"
+	@$(RM) *~ .*~ "\#*" ".\#*" && \
+	 (cd src && $(RM) *~ .*~ "\#*" ".\#*")
 
 clean: clean-spurious
-	@$(RM) *.cm* *.annot *.output *.o *.a && \
+	@(cd src && $(RM) *.cm* *.annot *.output *.o *.a) && \
 	$(RM) *.byt *.bin a.out $(EXE)
 
-before-clean-all: $(SRC_FILES) $(MLI_FILES)
+before-clean-all: $(ML_FILES) $(MLI_FILES)
 
 clean-all: clean before-clean-all
 	@$(RM) ./.depend && touch .depend && $(MAKE) depend
@@ -83,44 +60,33 @@ tarball: clean
 	TARBALL_NAME="$(SOFTWARE_FULL_NAME)-$${DATE}" && \
 	TARBALL_FILE="$${TARBALL_DIR}/$${TARBALL_NAME}" && \
 	($(CD) .. && \
-	 $(TAR_CZF) $${TARBALL_FILE}.tgz ./$(SOFTWARE_NAME) && \
+	 $(TAR_CZF) $${TARBALL_FILE}.tgz --exclude .svn ./$(SOFTWARE_NAME) && \
 	$(MV) $${TARBALL_FILE}.tgz .)
 
 etags:
 	@$(RM) TAGS && \
 	find . -name '*.ml*' -exec etags -a "{}" \; && \
 	find . -name '*.mk' -exec etags -a "{}" \; && \
-	find . -name 'Objs.mk' -exec etags -a "{}" \; && \
 	find . -name '*.mk.in' -exec etags -a "{}" \; && \
 	find . -name 'Makefile' -exec etags -a "{}" \;
 
-.ml.cmo:
-	@echo "Byte compiling $<" && \
-	$(CAMLC_BYT) -c $<
-
-.mli.cmi:
-	@echo "Compiling interface $<" && \
-	$(CAMLC_BYT) -c $<
-
-.ml.cmx:
-	@echo "Binary compiling $<" && \
-	$(CAMLC_BIN) -c $<
-
-.mll.ml:
-	@echo "Generating lexer $<" && \
-	$(CAMLC_LEX) $<
-
-.mly.ml:
-	@echo "Generating parser $<" && \
-	$(CAMLC_YAC) $<
-
-.mly.mli:
-	@echo "Generating parser $<" && \
-	$(CAMLC_YAC) $<
-
-depend:
+depend: $(CAML_GENERATED_FILES)
 	@echo "Computing dependencies" && \
-	ocamldep *.mli *.ml > .depend
+	$(CAMLC_DEP) $(MLI_FILES) $(ML_FILES) > .depend
+
+info:
+	@echo && \
+	echo "ALL_BYT_OBJS = $(ALL_BYT_OBJS)" && \
+	echo
+
+version:
+	svn copy \
+	  svn+ssh://sosie.inria.fr/home/svn/fisca/trunk \
+	  svn+ssh://sosie.inria.fr/home/svn/fisca/versions/$(SOFTWARE_RELEASE_NAME) \
+	  -m 'Tagging version $(SOFTWARE_RELEASE_NAME)'
+
+# Including Caml file compilation rules
+include config/Caml.mk
 
 include .depend
 

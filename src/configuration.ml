@@ -14,6 +14,7 @@
 
 let get_software_name () = "Fiscality specific language";;
 let get_command_name () = "fiscac";;
+let get_software_version () = "1.2.1";;
 
 let command_message =
   Printf.sprintf
@@ -85,3 +86,15 @@ let set_source_string, get_source_string =
    | Some source -> source)
 ;;
 
+let print_software_version () =
+  Format.eprintf "@[<v>%s: version %s@]@."
+    (get_command_name ())
+    (get_software_version ());
+  exit 0
+;;
+
+(*
+ Local Variables:
+  compile-command: "cd .. && make"
+  End:
+*)

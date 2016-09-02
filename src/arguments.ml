@@ -12,24 +12,33 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(*
-val print_ident : Format.formatter -> string -> unit
-val print_expression : Format.formatter -> Fisca_types.expression -> unit
-val print_expressions : Format.formatter -> Fisca_types.expressions -> unit
-val print_comparison_operator :
-  Format.formatter -> Fisca_types.comparison_operator -> unit
-val print_reduce_definition :
-  Format.formatter -> Fisca_types.reduce_definition -> unit
-val print_arguments : Format.formatter -> Fisca_types.expressions -> unit
-val print_variables : Format.formatter -> string list -> unit
-val print_definition : Format.formatter -> Fisca_types.definition -> unit
-val print_phrase : Format.formatter -> Fisca_types.phrase -> unit
-val print_phrases : Format.formatter -> Fisca_types.phrase list -> unit
-*)
-val print_program : Format.formatter -> Fisca_types.program -> unit
+let get_usage () =
+  let soft = Configuration.get_command_name () in
+  Printf.sprintf
+    "Usage: %s [options] [<filename>]\
+   \n  options are:"
+    soft
+;;
+
+let parse_args () =
+  Arg.parse_argv Sys.argv [
+    ("-c", Arg.String Configuration.set_source_file_name,
+     "<filename>: compile the given filename");
+    ("-s", Arg.String Configuration.set_source_string,
+     "<string>: use string argument as input to the compiler");
+    ("-d", Arg.Unit Configuration.set_debug,
+     ": trigger debugging mode");
+    ("-dparse", Arg.Unit Configuration.set_debug_parsing,
+     ": trigger parsing debugging mode");
+    ("-version", Arg.Unit Configuration.print_software_version,
+     ": print the current version of the compiler");
+  ]
+  Configuration.set_source_file_name
+  (get_usage ())
+;;
 
 (*
  Local Variables:
-  compile-command: "make"
+  compile-command: "cd .. && make"
   End:
 *)

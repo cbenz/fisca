@@ -12,29 +12,32 @@
 (*                                                                     *)
 (***********************************************************************)
 
-let get_usage () =
-  let soft = Configuration.get_command_name () in
-  Printf.sprintf
-    "Usage: %s [options] [<filename>]\
-   \n  options are:"
-    soft
-;;
+val get_software_name : unit -> string;;
+val get_command_name : unit -> string;;
 
-let parse_args () =
-  Arg.parse_argv Sys.argv [
-    ("-s", Arg.String Configuration.set_source_string,
-     "<string>: use string argument as input to the compiler");
-    ("-d", Arg.Unit Configuration.set_debug,
-     ": trigger debugging mode");
-    ("-dparse", Arg.Unit Configuration.set_debug_parsing,
-     ": trigger parsing debugging mode");
-  ]
-  Configuration.set_source_file_name
-  (get_usage ())
-;;
+val fatal_error : string -> 'a;;
+val fatal_message : string -> string;;
+
+val warning : string -> unit;;
+
+val set_source_file_name : Fisca_types.file_name -> unit;;
+val get_source_file_name : unit -> Fisca_types.file_name;;
+val is_source_file_name : unit -> bool;;
+
+val set_source_string : string -> unit;;
+val get_source_string : unit -> string;;
+
+(* Debug mode *)
+val get_debug : unit -> bool;;
+val set_debug : unit -> unit;;
+
+val get_debug_parsing : unit -> bool;;
+val set_debug_parsing : unit -> unit;;
+
+val print_software_version : unit -> unit;;
 
 (*
  Local Variables:
-  compile-command: "make"
+  compile-command: "cd .. && make"
   End:
 *)

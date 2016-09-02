@@ -1,19 +1,23 @@
-arguments.cmo : configuration.cmi arguments.cmi
-arguments.cmx : configuration.cmx arguments.cmi
-arguments.cmi :
-configuration.cmo : configuration.cmi
-configuration.cmx : configuration.cmi
-configuration.cmi : fisca_types.cmi
-fisca_lexer.cmo : fisca_parser.cmi configuration.cmi
-fisca_lexer.cmx : fisca_parser.cmx configuration.cmx
-fisca_parser.cmo : fisca_types.cmi fisca_parser.cmi
-fisca_parser.cmx : fisca_types.cmi fisca_parser.cmi
-fisca_parser.cmi : fisca_types.cmi
-fisca_program_pprint.cmo : fisca_types.cmi fisca_program_pprint.cmi
-fisca_program_pprint.cmx : fisca_types.cmi fisca_program_pprint.cmi
-fisca_program_pprint.cmi : fisca_types.cmi
-fisca_types.cmi :
-main.cmo : fisca_program_pprint.cmi fisca_parser.cmi fisca_lexer.cmo \
-    configuration.cmi arguments.cmi
-main.cmx : fisca_program_pprint.cmx fisca_parser.cmx fisca_lexer.cmx \
-    configuration.cmx arguments.cmx
+src/arguments.cmo : src/configuration.cmi src/arguments.cmi
+src/arguments.cmx : src/configuration.cmx src/arguments.cmi
+src/arguments.cmi :
+src/configuration.cmo : src/configuration.cmi
+src/configuration.cmx : src/configuration.cmi
+src/configuration.cmi : src/fisca_types.cmi
+src/fisca_lexer.cmo : src/fisca_types.cmi src/fisca_parser.cmi \
+    src/configuration.cmi
+src/fisca_lexer.cmx : src/fisca_types.cmi src/fisca_parser.cmx \
+    src/configuration.cmx
+src/fisca_parser.cmo : src/fisca_types.cmi src/fisca_parser.cmi
+src/fisca_parser.cmx : src/fisca_types.cmi src/fisca_parser.cmi
+src/fisca_parser.cmi : src/fisca_types.cmi
+src/fisca_program_pprint.cmo : src/fisca_types.cmi \
+    src/fisca_program_pprint.cmi
+src/fisca_program_pprint.cmx : src/fisca_types.cmi \
+    src/fisca_program_pprint.cmi
+src/fisca_program_pprint.cmi : src/fisca_types.cmi
+src/fisca_types.cmi :
+src/main.cmo : src/fisca_program_pprint.cmi src/fisca_parser.cmi \
+    src/fisca_lexer.cmo src/configuration.cmi src/arguments.cmi
+src/main.cmx : src/fisca_program_pprint.cmx src/fisca_parser.cmx \
+    src/fisca_lexer.cmx src/configuration.cmx src/arguments.cmx

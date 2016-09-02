@@ -16,7 +16,42 @@ open Fisca_types;;
 
 let print_ident ppf id = Format.fprintf ppf "%s" id;;
 
-let rec print_expression ppf = function
+let print_comment ppf = function
+  | {
+      comment_kind = _;
+      comment_desc = desc;
+    } ->
+    match desc with
+    | Comment_program s ->
+      Format.fprintf ppf
+        "(*%s"
+        s
+    | Comment_doc s ->
+      Format.fprintf ppf
+        "(**%s"
+        s
+;;
+
+let print_comments ppf = function
+  | [] -> ()
+  | comment :: comments ->
+    Format.fprintf ppf "@[<hv 0>%a%a@]"
+      print_comment comment
+      (fun ppf ->
+       List.iter (fun comment ->
+         Format.fprintf ppf "@,%a"
+         print_comment comment))
+      comments
+;;
+
+let print_commented print_desc ppf = function
+  | { desc = desc; comments : comments; } ->
+    Format.fprintf ppf "@[<v 0>%a%a@]"
+      print_comments comments
+      print_desc desc
+;;
+
+let rec print_expression_desc ppf = function
   | Int string
   | Float string
   | Bool string
@@ -26,10 +61,18 @@ let rec print_expression ppf = function
     Format.fprintf ppf "@[<hv 0>@[<hv 2>%a (@,%a@]@,)@]"
       print_expression expression
       print_expressions expressions
-  | Uminus expression ->
-    Format.fprintf ppf "- %a" print_expression expression
   | Uplus expression ->
     Format.fprintf ppf "+ %a" print_expression expression
+  | Uminus expression ->
+    Format.fprintf ppf "- %a" print_expression expression
+  | Ustar expression ->
+    Format.fprintf ppf "* %a" print_expression expression
+  | Uslash expression ->
+    Format.fprintf ppf "/ %a" print_expression expression
+  | Uor expression ->
+    Format.fprintf ppf "|| %a" print_expression expression
+  | Uand expression ->
+    Format.fprintf ppf "&& %a" print_expression expression
   | Sum (e1, e2) ->
     Format.fprintf ppf "@[<hv 0>%a +@ %a@]"
       print_expression e1
@@ -66,13 +109,9 @@ let rec print_expression ppf = function
       print_expression e2
 
   | Sigma reduce_definition ->
-    Format.fprintf ppf "@[Sigma %a@]" print_reduce_definition reduce_definition
-  | Sigma_list expressions ->
-    Format.fprintf ppf "@[Sigma (%a)" print_expressions expressions
+    Format.fprintf ppf "@[<hv 2>Sigma@ @[%a@]@]" print_reduce_definition reduce_definition
   | Pi reduce_definition ->
-    Format.fprintf ppf "@[Pi %a@]" print_reduce_definition reduce_definition
-  | Pi_list expressions ->
-    Format.fprintf ppf "@[Pi (%a)" print_expressions expressions
+    Format.fprintf ppf "@[<hv 2>Pi@ @[%a@]@]" print_reduce_definition reduce_definition
 
   | Field (expression, label) ->
     Format.fprintf ppf "@[<hv 2>%a@,.%s@]"
@@ -86,6 +125,8 @@ let rec print_expression ppf = function
 
   | Expression_parens expression ->
     Format.fprintf ppf "%a" print_expression expression
+
+and print_expression e = print_commented print_expression_desc e
 
 and print_expressions ppf expressions =
   match expressions with
@@ -107,6 +148,12 @@ and print_comparison_operator ppf = function
   | Ge -> Format.fprintf ppf ">="
 
 and print_reduce_definition ppf = function
+  | Reduce_list expressions ->
+    Format.fprintf ppf "(%a)" print_expressions expressions
+  | Reduce_loop reduce_loop_definition ->
+    Format.fprintf ppf "%a" print_reduce_loop_definition reduce_loop_definition
+
+and print_reduce_loop_definition ppf = function
   {
     reduce_variable = ident;
     reduce_from = expression_from;
@@ -135,7 +182,7 @@ let print_variables ppf variables =
       variables
 ;;
 
-let print_definition ppf = function
+let print_definition_desc ppf = function
   {
     defined_ident = ident;
     variables = variables;
@@ -143,32 +190,40 @@ let print_definition ppf = function
   } ->
   Format.fprintf ppf "\
     @[<hv 2>\
-    def %a@ (@[%a@]) =@ \
-      @[%a@]@,\
+    @[<hv 0>\
+    def %a@ (@[%a@]) =\
+    @]@ \
+      @[%a@]\
     @]"
     print_ident ident
     print_variables variables
     print_expression expression
 ;;
 
-let print_phrase ppf = function
+let print_definition = print_commented print_definition_desc;;
+
+let print_phrase_desc ppf = function
   | Expression expression ->
     Format.fprintf ppf "%a" print_expression expression
   | Definition definition ->
     Format.fprintf ppf "%a" print_definition definition
 ;;
 
+let print_phrase = print_commented print_phrase_desc;;
+
 let print_phrases ppf phrases =
-  List.iter (Format.fprintf ppf "%a@,;@," print_phrase) phrases
+  List.iter (Format.fprintf ppf "@[<hv 0>%a@,;@,@]" print_phrase) phrases
 ;;
 
-let print_program ppf = function
+let print_program_desc ppf = function
   | Program phrases ->
     Format.fprintf ppf "@[<v 0>%a@]" print_phrases phrases
 ;;
 
+let print_program = print_commented print_program_desc;;
+
 (*
  Local Variables:
-  compile-command: "make"
+  compile-command: "cd .. && make"
   End:
 *)

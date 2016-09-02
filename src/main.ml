@@ -51,13 +51,23 @@ let main ppf =
     if Configuration.is_source_file_name () then
       Format.fprintf ppf "file '%s'" src_fname else
       Format.fprintf ppf "string@ @[<hv 0>%s@]" src_fname in
-  Format.fprintf ppf
-    "@[<hv 0>@[<hv 2>AST of Fisca source %a@]@ has been successfully parsed.@]@."
-    print_src_fname src_fname;
-  Format.fprintf ppf
-    "@[<hv 2>@[@[<hv 2>AST of fisca source %a@]@ is printed as such:@]@ @[<hv 0>%a@]@]@."
-    print_src_fname src_fname
-  Fisca_program_pprint.print_program ast;
+  let print_parsed ppf =
+    Format.fprintf ppf
+      "@[<hv 0>\
+       AST of Fisca source %a@ has been successfully parsed.\
+       @]"
+      print_src_fname src_fname in
+  let print_source ppf =
+    Format.fprintf ppf
+      "@[<hv 0>\
+       AST of fisca source %a@ is printed as such:@ \
+       @[<hv 0>%a@]\
+       @]"
+      print_src_fname src_fname
+      Fisca_program_pprint.print_program ast in
+  Format.fprintf ppf "@[<v 0>%t@,%t@,@]@."
+    print_parsed
+    print_source
 ;;
 
 try main Format.std_formatter with
@@ -65,9 +75,19 @@ try main Format.std_formatter with
   Format.eprintf "%s@." s; exit 1
 | Arg.Bad s ->
   Format.eprintf "%s@." s; exit 2
+| Arg.Help s ->
+  Format.eprintf "%s@." s; exit 0
 | exc ->
   Format.eprintf "%s@."
     (Configuration.fatal_message (Printf.sprintf
        "spurious exception %s" (Printexc.to_string exc)));
   exit 2
 ;;
+
+(*
+
+ Local Variables:
+  compile-command: "cd .. && make"
+  End:
+
+*)

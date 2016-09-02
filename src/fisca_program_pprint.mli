@@ -12,24 +12,24 @@
 (*                                                                     *)
 (***********************************************************************)
 
-val get_software_name : unit -> string;;
-val get_command_name : unit -> string;;
+(*
+val print_ident : Format.formatter -> string -> unit
+val print_expression : Format.formatter -> Fisca_types.expression -> unit
+val print_expressions : Format.formatter -> Fisca_types.expressions -> unit
+val print_comparison_operator :
+  Format.formatter -> Fisca_types.comparison_operator -> unit
+val print_reduce_definition :
+  Format.formatter -> Fisca_types.reduce_definition -> unit
+val print_arguments : Format.formatter -> Fisca_types.expressions -> unit
+val print_variables : Format.formatter -> string list -> unit
+val print_definition : Format.formatter -> Fisca_types.definition -> unit
+val print_phrase : Format.formatter -> Fisca_types.phrase -> unit
+val print_phrases : Format.formatter -> Fisca_types.phrase list -> unit
+*)
+val print_program : Format.formatter -> Fisca_types.program -> unit
 
-val fatal_error : string -> 'a;;
-val fatal_message : string -> string;;
-
-val warning : string -> unit;;
-
-val set_source_file_name : Fisca_types.file_name -> unit;;
-val get_source_file_name : unit -> Fisca_types.file_name;;
-val is_source_file_name : unit -> bool;;
-
-val set_source_string : string -> unit;;
-val get_source_string : unit -> string;;
-
-(* Debug mode *)
-val get_debug : unit -> bool;;
-val set_debug : unit -> unit;;
-
-val get_debug_parsing : unit -> bool;;
-val set_debug_parsing : unit -> unit;;
+(*
+ Local Variables:
+  compile-command: "cd .. && make"
+  End:
+*)
