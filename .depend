@@ -1,0 +1,19 @@
+arguments.cmo : configuration.cmi arguments.cmi
+arguments.cmx : configuration.cmx arguments.cmi
+arguments.cmi :
+configuration.cmo : configuration.cmi
+configuration.cmx : configuration.cmi
+configuration.cmi : fisca_types.cmi
+fisca_lexer.cmo : fisca_parser.cmi configuration.cmi
+fisca_lexer.cmx : fisca_parser.cmx configuration.cmx
+fisca_parser.cmo : fisca_types.cmi fisca_parser.cmi
+fisca_parser.cmx : fisca_types.cmi fisca_parser.cmi
+fisca_parser.cmi : fisca_types.cmi
+fisca_program_pprint.cmo : fisca_types.cmi fisca_program_pprint.cmi
+fisca_program_pprint.cmx : fisca_types.cmi fisca_program_pprint.cmi
+fisca_program_pprint.cmi : fisca_types.cmi
+fisca_types.cmi :
+main.cmo : fisca_program_pprint.cmi fisca_parser.cmi fisca_lexer.cmo \
+    configuration.cmi arguments.cmi
+main.cmx : fisca_program_pprint.cmx fisca_parser.cmx fisca_lexer.cmx \
+    configuration.cmx arguments.cmx

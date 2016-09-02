@@ -1,0 +1,9 @@
+def taux () = 0.1;
+
+def RSA (p, F) =
+ 1| (p >= 0) * 0.2 + 1| (p + 1 <= 5) * 4.5
+;
+
+def taux (p, F) =
+ if F.nb_p > 2 then 0.38 else 42.0
+;

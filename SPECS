@@ -1,0 +1,78 @@
+#######################################################################
+#                                                                     #
+#                               Fisca                                 #
+#                                                                     #
+#                   Pierre Weis, INRIA Paris                          #
+#                                                                     #
+#  Copyright 2016-2016,                                               #
+#  Institut National de Recherche en Informatique et en Automatique.  #
+#  All rights reserved.                                               #
+#                                                                     #
+#  This file is distributed under the terms of the BSD License.       #
+#                                                                     #
+#######################################################################
+
+Definition of important concepts in Fisca:
+
+Time concepts:
+
+- a {\em date} is a point in time
+  (defined as in the ISO standard)
+
+- a {\em period} is a duration defined by two dates
+  (the period starts at its first (or beginning) date
+   and ends just before its second (or end date))
+
+Processor concept:
+
+- Computation in Fisca is separated into different computing entities that
+  are normally independant and can be processed standalone. Communications
+  between processes can be implemented via modifications of the situation of
+  an argument of a processor.
+
+Formula concept:
+
+- a processor uses {\em formulas} to compute its results.
+  Those formula are defined after the laws using a special simple grammar for
+  formulas that specified all the operations available in a formula.
+
+Situation concept:
+
+- a {\em situation} is the general notion of subjects of interest in Fisca.
+
+- a {\em situation} is a data that describes completely the set of data
+  necessary for all Fisca processors; each processor can then be applied to a
+  subset of the situation that is relevant to the given processor (this is a
+  kind of specific view of the situation, or a projection of the situation
+  for application to the processor).
+
+Note: all entities in Fisca are period dependant. For instance, situations
+may change (salary of people may change, they may be married or have
+children, etc). Even formulas vary since law rules are modified and a formula
+may be applicable for last year and a new one for this year.
+
+Note: time dependence of entities in Fisca is not assignment but functional
+dependency, since both the new and the old entity may be necessary for Fisca
+processors to run corretly. For instance a processor may need the situation
+of the last three years to perform the computation, and similarly for
+formulas that may apply to old situations long after the new rule has been
+set up.
+
+Observable concept:
+
+There may be a notion of ``observable'' value underlying the formulas. Such a
+value is a (time dependent) constant. For instance, a legal rate in a formula
+is probably an observable, since it is always the same notion but its value
+vary and should be given by a function call at any point in time. Carefully
+distinguishing those observables from regular constants may alleviate the
+syntax since various shortcuts may indicate an observable for today or this
+year or even such a period. For instance RSA_rate may be such an observable:
+simply writing ``observable RSA_rate'' (for instance denoted by ~RSA_rate)
+may mean that the compiler should compile ``RSA_rate (this_year ())''. To
+continue in this vein, we may have:
+
+- ~<y - 1>Rsa_rate compiled as ``RSA_rate (this_year () - 1)
+- ~<m - 1>Rsa_rate compiled as ``RSA_rate (this_month () - 1)
+
+Even clearer:
+- ~<~y - 1>Rsa_rate since this year is clearly an observable!

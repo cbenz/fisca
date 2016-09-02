@@ -1,0 +1,35 @@
+#######################################################################
+#                                                                     #
+#                               Fisca                                 #
+#                                                                     #
+#                   Pierre Weis, INRIA Paris                          #
+#                                                                     #
+#  Copyright 2016-2016,                                               #
+#  Institut National de Recherche en Informatique et en Automatique.  #
+#  All rights reserved.                                               #
+#                                                                     #
+#  This file is distributed under the terms of the BSD License.       #
+#                                                                     #
+#######################################################################
+
+To install Fisca:
+
+# Uncompress and install the tarball
+tar xzf fisca*
+
+# Configure and compile the software
+(cd fisca* && ./configure && make)
+
+# To find some (sparse) documentation
+cd fisca*
+./fiscac -help
+
+Also have a look to text file SPECS.
+
+# To test the syntax of your formulas run
+./fiscac -s "1| x >= 0 * taux"
+or
+./fiscac my_file.fsc
+
+# Have a look to file examples/example.fsc, and run
+./fiscac examples/example.fsc
